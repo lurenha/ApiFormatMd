@@ -2,14 +2,16 @@ import re
 import os
 
 source_txt = '''
-    @ApiOperation(value = "发送客户信息")
-    @RequestMapping(value = "/v1/send/info", method = RequestMethod.GET)
-    public Map<PersonInfoResponseVO,List<RegisterInfoResponseVO>> insert(@RequestBody @Vaild ShareProfitAgreementDTO paramBO,
-            @RequestParam(value = "userName", required = false) String userName,
-            @RequestParam(value = "userType", required = true) UserTypeEnum userType,
-            @RequestParam(value = "page", defaultValue = "1") Integer page,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
-        return null;
+    @ApiOperation(value = "平台端根据流程编码查询认证准入信息", notes = "平台端根据流程编码查询认证准入信息")
+    @RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
+    public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
+        BizCorpRealNameAuthResponseDTO bizCorpRealNameAuthResponseDTO = corpRnAuthService.findCorpRealName(fkRnProgress).tryResult();
+        BizCorpRealNameAuthResponseVO bizCorpRealNameAuthResponseVO = BeanUtils.map(bizCorpRealNameAuthResponseDTO, BizCorpRealNameAuthResponseVO.class);
+        String currentNodeState = bizCorpRealNameAuthResponseVO.getCurrentNodeState();
+        String label = corpRnAuthService.calculateLabel(fkRnProgress, CurrentNodeStateEnum.valueOfCode(currentNodeState)).tryResult();
+        bizCorpRealNameAuthResponseVO.setLabel(label);
+        setDirectorsProperty(Optional.ofNullable(bizCorpRealNameAuthResponseVO).map(BizCorpRealNameAuthResponseVO::getRnCorp).orElseGet(() -> null));
+        return bizCorpRealNameAuthResponseVO;
     }
 '''
 
@@ -39,12 +41,13 @@ template_txt = '''
 {other}
 \n
 '''
-author = '张三'
+author = '江火似流萤'
 
 root_path = r"D:\ccbscf"
 write_path = r"C:\Users\weipeng\Desktop"
 
-basic_type = set(['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'Map', 'List'])
+basic_type = set(
+    ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T'])
 redo_type = set()
 
 
@@ -84,11 +87,11 @@ def beautify_dto(name_dto, content):
     res = '<h5 id="' + name_dto + '">' + name_dto + '</h5>\n\n' + '''
 |字段|类型|必填|示例|说明|
 | :----: | :----: | :----: | :----: | :----: |\n'''
-    for i in range(len(r)):
-        tar = str.split(x[i].strip(), " ")
+    for i in range(len(x)):
+        split = str.split(x[i].strip(), "=")[0]
+        tar = str.split(split.strip(), " ")
         res += "|%s|%s|-|-|%s|\n" % (
-            tar[1], format_type(tar[0]), r[i])
-    return res
+            tar[-1], format_type(tar[0]), r[i] if i < len(r) else '-')
 
 
 def generate_request(param_list):
@@ -171,12 +174,19 @@ def write_file(name, text):
 def run():
     method = re.search('@RequestMapping.*?RequestMethod\.(.*?)[,\s\)]', source_txt).group(1)
     url = re.search('@RequestMapping.*?value.*?"(.*?)"', source_txt).group(1)
-    describe = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt).group(1)
+    describe = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
+    describe = describe.group(1) if describe else 'describe'
 
     # 请求参数说明
     param_list = re.findall('@RequestParam.*?"(.*?)".*?\)(.*?)[,\)]', source_txt)
     request_body = re.search('@RequestBody.*?(.*?)[,\)]', source_txt)
-    param_list.insert(0, (request_body.group(1), request_body.group(1)))
+    path_variable = re.search('@PathVariable(.*)[,\)]', source_txt)
+
+    if request_body:
+        param_list.insert(0, (request_body.group(1), request_body.group(1)))
+    if path_variable:
+        param_list.insert(0, (path_variable.group(1), path_variable.group(1)))
+
     request = generate_request(param_list)
     # 返回参数说明
     res_dto = re.search('public(.*?)\(', source_txt).group(1)
