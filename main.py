@@ -49,6 +49,7 @@ write_path = r"C:\Users\weipeng\Desktop"
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T'])
 redo_type = set()
+dto_dic = {}
 
 
 def find_file_by_name(filename, root_path=root_path):
@@ -77,6 +78,8 @@ def beautify_enum(name_enum, content):
 
 
 def beautify_dto(name_dto, content):
+    class_split = content.split("static class")
+    content = class_split[0]
     r = re.findall('ApiModelProperty.*?"(.*?)"', content)
     x = re.findall('private(.*?);', content)
     for i in range(len(x) - 1, -1, -1):
@@ -92,6 +95,13 @@ def beautify_dto(name_dto, content):
         tar = str.split(split.strip(), " ")
         res += "|%s|%s|-|-|%s|\n" % (
             tar[-1], format_type(tar[0]), r[i] if i < len(r) else '-')
+    for i in range(1, len(class_split)):
+        y = re.search('(.*?)\{', class_split[i])
+        if y:
+            if y.group(1).strip() not in dto_dic:
+                dto_dic[y.group(1).strip()] = class_split[i]
+                print("dic add:" + y.group(1).strip())
+    return res
 
 
 def generate_request(param_list):
@@ -123,6 +133,8 @@ def generate_enum(name_enum):
 
 
 def generate_dto(name_dto):
+    if name_dto in dto_dic:
+        return beautify_dto(name_dto, dto_dic[name_dto])
     content = read_file(find_file_by_name(name_dto + ".java"))
     if not content:
         return 'None\n'
