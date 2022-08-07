@@ -1,22 +1,19 @@
-import re
 import os
+import re
 import time
-from datetime import datetime
 
-source_txt = '''
-    @ApiOperation(value = "平台端根据流程编码查询认证准入信息1", notes = "平台端根据流程编码查询认证准入信息")
-    @RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
-    public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
-        BizCorpRealNameAuthResponseDTO bizCorpRealNameAuthResponseDTO = corpRnAuthService.findCorpRealName(fkRnProgress).tryResult();
-        BizCorpRealNameAuthResponseVO bizCorpRealNameAuthResponseVO = BeanUtils.map(bizCorpRealNameAuthResponseDTO, BizCorpRealNameAuthResponseVO.class);
-        String currentNodeState = bizCorpRealNameAuthResponseVO.getCurrentNodeState();
-        String label = corpRnAuthService.calculateLabel(fkRnProgress, CurrentNodeStateEnum.valueOfCode(currentNodeState)).tryResult();
-        bizCorpRealNameAuthResponseVO.setLabel(label);
-        setDirectorsProperty(Optional.ofNullable(bizCorpRealNameAuthResponseVO).map(BizCorpRealNameAuthResponseVO::getRnCorp).orElseGet(() -> null));
-        return bizCorpRealNameAuthResponseVO;
-    }
-'''
-
+# 作者
+author = '江火似流萤'
+# 载入外部类目录
+root_path = r"D:\ccbscf"
+# 生产文件目录
+write_path = r"C:\Users\weipeng\Desktop"
+# 预设类型
+basic_type = set(
+    ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
+     'Date', 'long', 'int'])
+redo_type = set()
+dto_dic = {}
 template_txt = '''
 ## 接口说明
 
@@ -43,29 +40,20 @@ template_txt = '''
 {other}
 \n
 '''
-author = '江火似流萤'
-
-root_path = r"D:\ccbscf"
-write_path = r"C:\Users\weipeng\Desktop"
-
-basic_type = set(
-    ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
-     'Date', 'long', 'int'])
-redo_type = set()
-dto_dic = {}
 
 
-def find_file_by_name(filename, root_path=root_path):
+def generate_file_dfs(root_path=root_path):
     # 查找文件代码
     files = os.listdir(root_path)
     for s in files:
         s_path = os.path.join(root_path, s)
         if os.path.isdir(s_path):
-            r = find_file_by_name(filename, s_path)
-            if r:
-                return r
-        elif os.path.isfile(s_path) and filename == s:
-            return s_path
+            generate_file_dfs(s_path)
+        elif os.path.isfile(s_path):
+            cur = s.split(".")[0]
+            if cur in redo_type and cur not in dto_dic:
+                print("dic add:" + cur)
+                dto_dic[cur] = read_file(s_path)
 
 
 def read_file(file_path):
@@ -99,7 +87,6 @@ def beautify_dto(name_dto, content):
         res += "|%s|%s|-|-|%s|\n" % (
             tar[-1], format_type(tar[0]), r[i] if i < len(r) else '-')
     for i in range(1, len(class_split)):
-
         y = re.search('(.*?)\{', class_split[i])
         if y:
             if y.group(1).strip() not in dto_dic:
@@ -130,19 +117,17 @@ def generate_response(dto):
 
 
 def generate_enum(name_enum):
-    content = read_file(find_file_by_name(name_enum + ".java"))
-    if not content:
+    if name_enum in dto_dic:
+        return beautify_enum(name_enum, dto_dic[name_enum])
+    else:
         return 'None\n'
-    return beautify_enum(name_enum, content)
 
 
 def generate_dto(name_dto):
     if name_dto in dto_dic:
         return beautify_dto(name_dto, dto_dic[name_dto])
-    content = read_file(find_file_by_name(name_dto + ".java"))
-    if not content:
+    else:
         return 'None\n'
-    return beautify_dto(name_dto, content)
 
 
 def format_type(type):
@@ -171,6 +156,7 @@ def generate_other():
     over_type = set()
     res = ''
     while redo_type:
+        generate_file_dfs()
         redo_type_slave = redo_type.copy()
         redo_type.clear()
         for i in redo_type_slave - over_type:
@@ -187,7 +173,7 @@ def write_file(name, text):
         f.write(text)
 
 
-def run():
+def run(source_txt):
     method = re.search('@RequestMapping.*?RequestMethod\.(.*?)[,\s\)]', source_txt).group(1)
     url = re.search('@RequestMapping.*?value.*?"(.*?)"', source_txt).group(1)
     describe = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
@@ -219,6 +205,34 @@ def run():
 
 
 if __name__ == '__main__':
+    param = '''
+        /**
+         * 企业端-融信-融信签发-获取特定使用渠道可占用的额度信息
+         *
+         * @param fkCorp          签条方（即企业ID）
+         * @param fkProductCcbscf 建信融通产品编号
+         * @param limitUseChannel 使用渠道
+         * @return
+         * @author 商梦德
+         */
+        @RequestMapping(value = "/v1/limits/ccbscfs/details/channels/can-occupy/list", method = RequestMethod.GET)
+        public List<CcbscfLimitDetailDTO> listCanOccupyCcbscfLimit(
+                @RequestParam(value = "fkCorp", required = true) String fkCorp,
+                @RequestParam(value = "fkProductCcbscf", required = true) String fkProductCcbscf,
+                @RequestParam(value = "limitUseChannel", required = true) LimitUseChannelEnum limitUseChannel) {
+            List<TLmtCcbscfDetail> ccbscfLimitDetails = limitAdapterService.listCanOccupyCcbscfLimit(fkCorp,
+                    fkProductCcbscf, limitUseChannel);
+            if (ccbscfLimitDetails != null) {
+                List<CcbscfLimitDetailDTO> ccbscfLimitDetailDTOs = BeanUtils.mapc(ccbscfLimitDetails,
+                        CcbscfLimitDetailDTO.class);
+                // 设置额度来源企业全称
+                ccbscfLimitDetailDTOs = limitCcbscfReleaseService.setLimitDetailSourceFullname(ccbscfLimitDetailDTOs);
+                return ccbscfLimitDetailDTOs;
+            }
+            return null;
+        }
+    '''
+
     print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-    run()
+    run(param)
     print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
