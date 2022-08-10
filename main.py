@@ -11,9 +11,20 @@ write_path = r"C:\Users\weipeng\Desktop"
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
      'Date', 'long', 'int'])
-redo_type = set()
+redo_class_set = set()
 java_class_dic = {}
-dto_dic_path = {}
+dto_path_dic = {}
+# ------------------------
+template1 = '''<h5 id="{name_class}">{name_class}</h5>\n\n
+|字段|类型|必填|说明|备注|
+| :----: | :----: | :----: | :----: | :----: |\n{table}'''
+# ------------------------
+template2 = '''<h5 id="{name_enum}">{name_enum}</h5>\n
+```java
+  \n
+{table}
+```\n'''
+# ------------------------
 template_txt = '''
 ## 接口说明
 
@@ -42,7 +53,9 @@ template_txt = '''
 '''
 
 
-def find_all_java_file_path(cur_path):
+# ------------------------
+
+def find_all_java_file_path(cur_path=root_path):
     # 查找文件代码
     files = os.listdir(cur_path)
     for s in files:
@@ -52,7 +65,7 @@ def find_all_java_file_path(cur_path):
         elif os.path.isfile(s_path):
             pre = s.split(".")[0]
             if '.java' in s:
-                dto_dic_path[pre] = s_path
+                dto_path_dic[pre] = s_path
 
 
 def read_content_by_file_path(file_path):
@@ -64,44 +77,64 @@ def read_content_by_file_path(file_path):
 
 
 def beautify_enum(name_enum, content):
-    template2 = '''<h5 id="{name_enum}">{name_enum}</h5>\n
-```java
-  \n
-{table}
-```\n'''
-    return template2.format(name_enum=name_enum, table=content.split(name_enum + "(")[0] + '}')
+    m = content.split('enum ' + name_enum)[1]
+    return template2.format(name_enum=name_enum, table='enum ' + name_enum + m[:m.index(';') + 1])
+
+
+def dfs_generate_table(name_class, cur_table, content):
+    parent = re.search(name_class.split('.')[-1]
+                       + '\sextends\s(.*?)\s(\{|implements)', content)
+    if parent:
+        parent = parent.group(1).strip()
+        # 先处理父类
+        if parent not in java_class_dic:
+            return
+        dfs_generate_table(parent, cur_table, java_class_dic[parent])
+    cur_about = []
+    cur_extend = []
+    for line in content.split('\n'):
+        about = re.search('(//|\*).*', line)
+        extend = re.search('ApiModelProperty.*?"(.*?)"', line)
+        if about:
+            cur_about.append(about.group().replace('*', '').replace('/', ''))
+        if extend:
+            cur_extend.append(extend.group(1))
+
+        m = re.search('(private|protected)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[=;]', line)
+        if m:
+            if 'static' in m.group(2):
+                continue
+            cur_table.append(
+                "|%s|%s|-|%s|%s|\n" % (
+                    m.group(3), format_type(m.group(2)), ','.join(cur_extend) if cur_extend else '-',
+                    ','.join(cur_about) if cur_about else '-'))
+            cur_about.clear()
+            cur_extend.clear()
 
 
 def beautify_class(name_class, content):
-    template1 = '''<h5 id="{name_class}">{name_class}</h5>\n\n
-|字段|类型|必填|示例|说明|
-| :----: | :----: | :----: | :----: | :----: |\n{table}'''
+    class_chin = name_class.split('.')
+    if len(class_chin) > 1:
+        beautify_class(class_chin[0], read_content_by_file_path(dto_path_dic[class_chin[0]]))
 
-    class_split = content.split("static class")
-    content = class_split[0]
-    r = re.findall('ApiModelProperty.*?"(.*?)"', content)
-    x = re.findall('(private|protected)(.*?);', content)
-    for i in range(len(x) - 1, -1, -1):
-        if 'static' in x[i][1]:
-            print("delete line:" + x[i][1])
-            x.pop(i)
-
-    table = ''
-    for i in range(len(x)):
-        split = str.split(x[i][1].strip(), "=")[0]
-        if not split:
-            continue
-        tar = str.split(split.strip(), " ")
-        table += "|%s|%s|-|-|%s|\n" % (
-            tar[-1], format_type(tar[-2]), r[i] if i < len(r) else '-')
-    table += '---\n\n'
-
-    for i in range(1, len(class_split)):
-        y = re.search('(.*?)(extends|\{)', class_split[i])
+    class_split = content.split(" class")
+    # 内部类 文件遍历时找不到内部类 在此处处理
+    for i in range(2, len(class_split)):
+        y = re.search('(.*?)(extends|implements|\{)', class_split[i])
         if y:
             if y.group(1).strip() not in java_class_dic:
-                java_class_dic[y.group(1).strip()] = class_split[i]
+                java_class_dic[y.group(1).strip()] = "pre class" + class_split[i]
                 print("dic add inner class:" + y.group(1).strip())
+    # 替换主类
+    java_class_dic[name_class] = class_split[1]
+
+    cur_table = []
+    dfs_generate_table(name_class, cur_table, class_split[1])
+
+    table = ''
+    for t in cur_table:
+        table += t
+    table += '---\n\n'
 
     return template1.format(name_class=name_class, table=table)
 
@@ -110,10 +143,9 @@ def generate_request(param_list):
     res = '''
 |参数名|类型|必填|示例|说明|
 | :----: | :----: | :----: | :----: | :----: |\n'''
-    for param in param_list:
-        s = str.split(param[1].strip(), " ")
+    for p in param_list:
         res += "|%s|%s|-|-|-|\n" % (
-            s[-1], format_type(s[-2]))
+            p[-1], format_type(p[-2]))
     return res
 
 
@@ -141,38 +173,42 @@ def generate_class(name_class):
         return 'None\n---\n\n'
 
 
-def format_type(type):
-    r = re.search('<(.*)>', type)
+def format_type(dto):
+    dto = dto.strip()
+    r = re.search('<(.+)>', dto)
     if r:
         s = r.start()
-        exter = type[:s].strip()
+        pre = dto[:s].strip()
         inter = r.group(1)
-        r = format_type(exter)
-        r += '<'
-        for i in inter.split(','):
-            r += format_type(i)
-            r += ","
-        r = r[:-1]
-        r += '>'
+        r = format_type(pre)
+        r += '<' + ','.join([format_type(i) for i in inter.split(',')]) + '>'
         return r
     else:
-        if type in basic_type:
-            return type
+        if dto in basic_type:
+            return dto
         else:
-            redo_type.add(type)
-            return '[' + type + '](#' + type + ')'
+            redo_class_set.add(dto)
+            return '''[{dto}](#{dto})'''.format(dto=dto)
 
 
 def generate_other():
     over_type = set()
     res = ''
-    while redo_type:
-        redo_type_slave = redo_type.copy()
-        redo_type.clear()
+    while redo_class_set:
+        redo_type_slave = redo_class_set.copy()
+        redo_class_set.clear()
         for i in redo_type_slave - over_type:
             if i not in java_class_dic:
-                java_class_dic[i] = read_content_by_file_path(dto_dic_path[i])
+                sp = i.split('.')
+                tem = read_content_by_file_path(dto_path_dic[sp[0]])
+                # 内部类处理
+                for cur in sp[1:]:
+                    tem = 'pre ' + tem[re.search('class.*?' + cur + '.*{', tem).start():]
+                java_class_dic[i] = tem
+                java_class_dic[sp[-1]] = tem
             print("generate class:" + i)
+            if len(sp) > 1:
+                print("generate class:" + sp[-1])
             if "Enum" in i:
                 res += generate_enum(i)
             else:
@@ -187,8 +223,7 @@ def write_file(name, text):
         f.write(text)
 
 
-def run(source_txt, des):
-    find_all_java_file_path(root_path)
+def generate_res(source_txt, des='describe'):
     r1 = re.search('@RequestMapping.*?RequestMethod\.(.*?)[,\s\)]', source_txt)
     if r1:
         method = r1.group(1)
@@ -205,43 +240,42 @@ def run(source_txt, des):
     describe = describe.group(1) if describe else des
 
     # 请求参数说明
-    param_list = re.findall('@RequestParam.*?"(.*?)".*?\)(.*?)[,\)]', source_txt)
-    request_body = re.search('@RequestBody.*?(.*?)[,\)]', source_txt)
-    path_variable = re.search('@PathVariable(.*)[,\)]', source_txt)
+    param_list = []
+    request_body = re.search('@RequestBody\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
+    path_variable = re.search('@PathVariable(.*?)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
 
+    param_list.extend(re.findall('@RequestParam.*?\s?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
     if request_body:
-        param_list.insert(0, (request_body.group(1), request_body.group(1)))
+        param_list.append((request_body.group(1), request_body.group(2)))
     if path_variable:
-        param_list.insert(0, (path_variable.group(1), path_variable.group(1)))
-
+        param_list.append((path_variable.group(2), path_variable.group(3)))
     request = generate_request(param_list)
     # 返回参数说明
-    res_dto = re.search('public(.*?)\(', source_txt).group(1).strip()
-    res_dto = str.split(res_dto.strip(), " ")[0]
+    res_dto = re.search('public\s([a-zA-Z<>,\.\s]+)\s([_a-zA-Z0-9]+)\s?\(', source_txt).group(1).strip()
     response = generate_response(res_dto)
     # 补充实体说明
     other = generate_other()
     # 填充到模板
     res = template_txt.format(name=author, describe=describe, url=url, method=method, request=request,
                               response=response, other=other)
-    # 写入文件
-    write_file(describe, res)
-    print("succeed!")
+    return res
 
 
 if __name__ == '__main__':
     param = '''
-    @ApiOperation(value = "平台端根据流程编码查询认证准入信息", notes = "平台端根据流程编码查询认证准入信息")
-    @RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
-    public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
-        BizCorpRealNameAuthResponseDTO bizCorpRealNameAuthResponseDTO = corpRnAuthService.findCorpRealName(fkRnProgress).tryResult();
-        BizCorpRealNameAuthResponseVO bizCorpRealNameAuthResponseVO = BeanUtils.map(bizCorpRealNameAuthResponseDTO, BizCorpRealNameAuthResponseVO.class);
-        String currentNodeState = bizCorpRealNameAuthResponseVO.getCurrentNodeState();
-        String label = corpRnAuthService.calculateLabel(fkRnProgress, CurrentNodeStateEnum.valueOfCode(currentNodeState)).tryResult();
-        bizCorpRealNameAuthResponseVO.setLabel(label);
-        setDirectorsProperty(Optional.ofNullable(bizCorpRealNameAuthResponseVO).map(BizCorpRealNameAuthResponseVO::getRnCorp).orElseGet(() -> null));
-        return bizCorpRealNameAuthResponseVO;
+    /** 
+     * 新增金融集团客户信息
+     * @author 商梦德
+     * @param groupTempRequestVO
+     * @return
+     */
+    @ApiOperation(value = "新增金融集团客户信息")
+    @RequestMapping(value = "/v1/pending/crs/groups/finances", method = RequestMethod.POST)
+    public int insertGroupFinanceTemp(@Validated @RequestBody GroupTempRequestVO groupTempRequestVO) {
+        GroupTempDTO groupTempDTO = BeanUtils.map(groupTempRequestVO, GroupTempDTO.class);
+        groupTempDTO.setGroupType(GroupTypeEnum.GROUP_FINANCE);
+        return groupFinanceManageService.insertGroupFinanceTemp(groupTempDTO).tryResult();
     }
-    '''
-
-    run(param, '是否可以占用额度')
+'''
+    find_all_java_file_path(root_path)
+    write_file('随便起个名', generate_res(param))
