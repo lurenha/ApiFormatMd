@@ -11,9 +11,9 @@ write_path = r"C:\Users\weipeng\Desktop"
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
      'Date', 'long', 'int'])
-redo_class_set = set()
-java_class_dic = {}
-dto_path_dic = {}
+class_todo_set = set()
+class_content_dic = {}
+class_path_dic = {}
 # ------------------------
 template1 = '''<h5 id="{name_class}">{name_class}</h5>\n\n
 |字段|类型|必填|说明|备注|
@@ -55,17 +55,17 @@ template_txt = '''
 
 # ------------------------
 
-def find_all_java_file_path(cur_path=root_path):
+def generate_class_path(cur_path=root_path):
     # 查找文件代码
     files = os.listdir(cur_path)
     for s in files:
         s_path = os.path.join(cur_path, s)
         if os.path.isdir(s_path) and 'target' != s:
-            find_all_java_file_path(s_path)
+            generate_class_path(s_path)
         elif os.path.isfile(s_path):
             pre = s.split(".")[0]
             if '.java' in s:
-                dto_path_dic[pre] = s_path
+                class_path_dic[pre] = s_path
 
 
 def read_content_by_file_path(file_path):
@@ -87,9 +87,9 @@ def dfs_generate_table(name_class, cur_table, content):
     if parent:
         parent = parent.group(1).strip()
         # 先处理父类
-        if parent not in java_class_dic:
+        if parent not in class_content_dic:
             return
-        dfs_generate_table(parent, cur_table, java_class_dic[parent])
+        dfs_generate_table(parent, cur_table, class_content_dic[parent])
     cur_about = []
     cur_extend = []
     for line in content.split('\n'):
@@ -106,7 +106,7 @@ def dfs_generate_table(name_class, cur_table, content):
                 continue
             cur_table.append(
                 "|%s|%s|-|%s|%s|\n" % (
-                    m.group(3), format_type(m.group(2)), ','.join(cur_extend) if cur_extend else '-',
+                    m.group(3), format_and_todo_type(m.group(2)), ','.join(cur_extend) if cur_extend else '-',
                     ','.join(cur_about) if cur_about else '-'))
             cur_about.clear()
             cur_extend.clear()
@@ -115,18 +115,18 @@ def dfs_generate_table(name_class, cur_table, content):
 def beautify_class(name_class, content):
     class_chin = name_class.split('.')
     if len(class_chin) > 1:
-        beautify_class(class_chin[0], read_content_by_file_path(dto_path_dic[class_chin[0]]))
+        beautify_class(class_chin[0], read_content_by_file_path(class_path_dic[class_chin[0]]))
 
     class_split = content.split(" class")
     # 内部类 文件遍历时找不到内部类 在此处处理
     for i in range(2, len(class_split)):
         y = re.search('(.*?)(extends|implements|\{)', class_split[i])
         if y:
-            if y.group(1).strip() not in java_class_dic:
-                java_class_dic[y.group(1).strip()] = "pre class" + class_split[i]
+            if y.group(1).strip() not in class_content_dic:
+                class_content_dic[y.group(1).strip()] = "pre class" + class_split[i]
                 print("dic add inner class:" + y.group(1).strip())
     # 替换主类
-    java_class_dic[name_class] = class_split[1]
+    class_content_dic[name_class] = class_split[1]
 
     cur_table = []
     dfs_generate_table(name_class, cur_table, class_split[1])
@@ -145,7 +145,7 @@ def generate_request(param_list):
 | :----: | :----: | :----: | :----: | :----: |\n'''
     for p in param_list:
         res += "|%s|%s|-|-|-|\n" % (
-            p[-1], format_type(p[-2]))
+            p[-1], format_and_todo_type(p[-2]))
     return res
 
 
@@ -155,60 +155,77 @@ def generate_response(dto):
 | :----: | :----: | :----: | :----: |
 |code|String|"0"|状态码(非0为异常情况)|
 |message |String|请求成功|信息描述|
-|data|{dto}|-|- |\n'''.format(dto=format_type(dto))
+|data|{dto}|-|- |\n'''.format(dto=format_and_todo_type(dto))
     return res
 
 
 def generate_enum(name_enum):
-    if name_enum in java_class_dic:
-        return beautify_enum(name_enum, java_class_dic[name_enum])
+    if name_enum in class_content_dic:
+        return beautify_enum(name_enum, class_content_dic[name_enum])
     else:
         return 'None\n---\n\n'
 
 
 def generate_class(name_class):
-    if name_class in java_class_dic:
-        return beautify_class(name_class, java_class_dic[name_class])
+    if name_class in class_content_dic:
+        return beautify_class(name_class, class_content_dic[name_class])
     else:
         return 'None\n---\n\n'
 
 
-def format_type(dto):
-    dto = dto.strip()
-    r = re.search('<(.+)>', dto)
+def format_and_todo_type(vo_name):
+    vo_name = vo_name.strip()
+    r = re.search('<(.+)>', vo_name)
     if r:
         s = r.start()
-        pre = dto[:s].strip()
+        pre = vo_name[:s].strip()
         inter = r.group(1)
-        r = format_type(pre)
-        r += '<' + ','.join([format_type(i) for i in inter.split(',')]) + '>'
+        r = format_and_todo_type(pre)
+        r += '<' + ','.join([format_and_todo_type(i) for i in inter.split(',')]) + '>'
         return r
     else:
-        if dto in basic_type:
-            return dto
+        if vo_name in basic_type:
+            return vo_name
         else:
-            redo_class_set.add(dto)
-            return '''[{dto}](#{dto})'''.format(dto=dto)
+            class_todo_set.add(vo_name)
+            return '''[{dto}](#{dto})'''.format(dto=vo_name)
+
+
+def add_in_class_content_dic(class_name):
+    if class_name not in class_content_dic:
+        class_name_list = class_name.split('.')
+
+        if class_name_list[-1] in class_content_dic:  # 尾在 头一定在
+            class_content_dic[class_name] = class_content_dic[class_name_list[-1]]
+            return
+        else:  # 尾不在 头一定不在
+            if class_name_list[0] in class_path_dic:
+                com_content = read_content_by_file_path(class_path_dic[class_name_list[0]])
+                #切割
+
+                if [class_name_list[0] in class_content_dic:
+                    pass  # 尾不在 头在 不存在该情况
+                else:
+
+                    tem = read_content_by_file_path(class_path_dic[class_name_list[0]])
+                # 内部类处理
+                for cur in sp[1:]:
+                    tem = 'pre ' + tem[re.search('class.*?' + cur + '.*{', tem).start():]
+                class_content_dic[i] = tem
+                class_content_dic[sp[-1]] = tem
+                print("generate class:" + i)
+                if len(sp) > 1:
+                    print("generate class:" + sp[-1])
 
 
 def generate_other():
     over_type = set()
     res = ''
-    while redo_class_set:
-        redo_type_slave = redo_class_set.copy()
-        redo_class_set.clear()
+    while class_todo_set:
+        redo_type_slave = class_todo_set.copy()
+        class_todo_set.clear()
         for i in redo_type_slave - over_type:
-            if i not in java_class_dic:
-                sp = i.split('.')
-                tem = read_content_by_file_path(dto_path_dic[sp[0]])
-                # 内部类处理
-                for cur in sp[1:]:
-                    tem = 'pre ' + tem[re.search('class.*?' + cur + '.*{', tem).start():]
-                java_class_dic[i] = tem
-                java_class_dic[sp[-1]] = tem
-            print("generate class:" + i)
-            if len(sp) > 1:
-                print("generate class:" + sp[-1])
+            add_in_class_content_dic(i)
             if "Enum" in i:
                 res += generate_enum(i)
             else:
@@ -223,36 +240,34 @@ def write_file(name, text):
         f.write(text)
 
 
-def generate_res(source_txt, des='describe'):
+def generate_res(source_txt, des='找不到名字了用这个吧'):
+    # method
     r1 = re.search('@RequestMapping.*?RequestMethod\.(.*?)[,\s\)]', source_txt)
-    if r1:
-        method = r1.group(1)
-    else:
-        method = re.search('@(.*)?Mapping', source_txt).group(1)
+    method = r1.group(1) if r1 else re.search('@(.*)?Mapping', source_txt).group(1)
 
+    # url
     r2 = re.search('@RequestMapping.*?value.*?"(.*?)"', source_txt)
-    if r2:
-        url = r2.group(1)
-    else:
-        url = re.search('Mapping.*?value.*?"(.*?)"', source_txt).group(1)
+    url = r2.group(1) if r2 else re.search('Mapping.*?value.*?"(.*?)"', source_txt).group(1)
 
-    describe = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
-    describe = describe.group(1) if describe else des
+    # describe
+    r3 = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
+    describe = r3.group(1) if r3 else des
 
     # 请求参数说明
     param_list = []
     request_body = re.search('@RequestBody\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
     path_variable = re.search('@PathVariable(.*?)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
-
     param_list.extend(re.findall('@RequestParam.*?\s?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
     if request_body:
         param_list.append((request_body.group(1), request_body.group(2)))
     if path_variable:
         param_list.append((path_variable.group(2), path_variable.group(3)))
     request = generate_request(param_list)
+
     # 返回参数说明
     res_dto = re.search('public\s([a-zA-Z<>,\.\s]+)\s([_a-zA-Z0-9]+)\s?\(', source_txt).group(1).strip()
     response = generate_response(res_dto)
+
     # 补充实体说明
     other = generate_other()
     # 填充到模板
@@ -264,5 +279,5 @@ def generate_res(source_txt, des='describe'):
 if __name__ == '__main__':
     param = '''
 '''
-    find_all_java_file_path(root_path)
+    generate_class_path(root_path)
     write_file('随便起个名', generate_res(param))

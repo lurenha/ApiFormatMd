@@ -21,7 +21,7 @@ if __name__ == '__main__':
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
     }
 
-    main.find_all_java_file_path()
+    main.generate_class_path()
 
     data = {
         'page_id': '9213252099951342',
