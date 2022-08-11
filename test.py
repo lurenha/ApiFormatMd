@@ -2,17 +2,6 @@ import requests
 import main
 
 param = '''
-@ApiOperation(value = "平台端根据流程编码查询认证准入信息", notes = "平台端根据流程编码查询认证准入信息")
-@RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
-public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
-    BizCorpRealNameAuthResponseDTO bizCorpRealNameAuthResponseDTO = corpRnAuthService.findCorpRealName(fkRnProgress).tryResult();
-    BizCorpRealNameAuthResponseVO bizCorpRealNameAuthResponseVO = BeanUtils.map(bizCorpRealNameAuthResponseDTO, BizCorpRealNameAuthResponseVO.class);
-    String currentNodeState = bizCorpRealNameAuthResponseVO.getCurrentNodeState();
-    String label = corpRnAuthService.calculateLabel(fkRnProgress, CurrentNodeStateEnum.valueOfCode(currentNodeState)).tryResult();
-    bizCorpRealNameAuthResponseVO.setLabel(label);
-    setDirectorsProperty(Optional.ofNullable(bizCorpRealNameAuthResponseVO).map(BizCorpRealNameAuthResponseVO::getRnCorp).orElseGet(() -> null));
-    return bizCorpRealNameAuthResponseVO;
-}
 '''
 
 

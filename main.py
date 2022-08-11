@@ -263,19 +263,6 @@ def generate_res(source_txt, des='describe'):
 
 if __name__ == '__main__':
     param = '''
-    /** 
-     * 新增金融集团客户信息
-     * @author 商梦德
-     * @param groupTempRequestVO
-     * @return
-     */
-    @ApiOperation(value = "新增金融集团客户信息")
-    @RequestMapping(value = "/v1/pending/crs/groups/finances", method = RequestMethod.POST)
-    public int insertGroupFinanceTemp(@Validated @RequestBody GroupTempRequestVO groupTempRequestVO) {
-        GroupTempDTO groupTempDTO = BeanUtils.map(groupTempRequestVO, GroupTempDTO.class);
-        groupTempDTO.setGroupType(GroupTypeEnum.GROUP_FINANCE);
-        return groupFinanceManageService.insertGroupFinanceTemp(groupTempDTO).tryResult();
-    }
 '''
     find_all_java_file_path(root_path)
     write_file('随便起个名', generate_res(param))
