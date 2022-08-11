@@ -174,10 +174,27 @@ def find_right_end_idx(text, begin_idx):
 #     print('------------------------------')
 
 
-r = re.findall('class\s.*?{', source)
-for i in r:
-    print(i)
-    begin = source.find(i) + len(i) - 1
-    end = find_right_end_idx(source, begin)
-    print(source[begin + 1:end])
-    print('------------------------------')
+class_content_dic = {}
+
+
+def dfs_load_class_by_name(class_name, source):
+    all_content_list = re.findall('class\s.*?{', source)
+    for cur_content in all_content_list:
+        cur_class_name = re.search('class\s([a-zA-Z<>,]+)\s?(implements|extends|\{)', cur_content).group(1)
+        p = re.search('\sextends\s(.*?)\s(\{|implements)', cur_content)
+        if p:
+            parent = p.group(1)
+            if parent not in class_content_dic:
+                pass  # 处理父类
+        begin = source.find(cur_content) + len(cur_content) - 1
+        end = find_right_end_idx(source, begin)
+        cur_source = source[begin + 1:end]
+        f = re.search('class\s.*?{', cur_source)
+        if f:
+            # 剔除内部类
+            cur_source = cur_source[:cur_source.find(f.group())]
+        # 处理当前类和内部类
+        class_content_dic[cur_class_name] = cur_source
+
+
+print(class_content_dic)
