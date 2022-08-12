@@ -147,6 +147,7 @@ def generate_enum(name_enum):
 
 
 def generate_class(name_class):
+    name_class = name_class.split('.')[-1]
     if name_class in class_content_dic:
         return beautify_class(name_class, class_content_dic[name_class])
     else:
@@ -168,7 +169,7 @@ def format_and_todo_type(vo_name):
             return vo_name
         else:
             class_todo_set.add(vo_name)
-            return '''[{dto}](#{dto})'''.format(dto=vo_name)
+            return '''[{dto}](#{dto_url})'''.format(dto=vo_name, dto_url=vo_name.split('.')[-1])
 
 
 def find_right_end_idx(text, begin_idx):
@@ -191,7 +192,7 @@ def find_right_end_idx(text, begin_idx):
 def dfs_load_class_by_content(source):
     all_content_list = re.findall('class\s.*?{', source)
     for cur_content in all_content_list:
-        cur_class_name = re.search('class\s([a-zA-Z<>,]+)\s?(implements|extends|\{)', cur_content).group(1)
+        cur_class_name = re.search('class\s([a-zA-Z]+)\s?(<|>|,|implements|extends|\{)', cur_content).group(1)
         begin = source.find(cur_content) + len(cur_content) - 1
         end = find_right_end_idx(source, begin)
         cur_source = source[begin + 1:end]
@@ -200,14 +201,15 @@ def dfs_load_class_by_content(source):
             # 剔除内部类
             cur_source = cur_source[:cur_source.find(f.group())]
         # 处理当前类和内部类
+        print('add:' + cur_class_name)
         class_content_dic[cur_class_name] = cur_source
         p = re.search('\sextends\s(.*?)\s(\{|implements)', cur_content)
         if p:
             parent = p.group(1)
+            class_parent_dic[cur_class_name] = parent
             if parent not in class_content_dic:
                 if parent in class_path_dic:
                     dfs_load_class_by_content(read_content_by_file_path(class_path_dic[parent]))
-                    class_parent_dic[cur_class_name] = parent
 
 
 def load_class_by_name(class_name):
@@ -280,8 +282,15 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
 
 if __name__ == '__main__':
     param = '''
-    @RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
-    public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
-    '''
+    @ApiOperation(value = "查询已生效的基准利率")
+       @GetMapping(value = "/v1/prices/benchmarks/list")
+       public SearchResult<PriceBenchmarkRateVO.PriceBenchmarkRateResponseVO> listPriceBenchmarkRatesByConditions(
+               @ApiIgnore User user,
+               @ApiParam(value = "基准利率类型", required = false) @RequestParam(value = "benchmarkRateType", required = false) BenchmarkRateTypeEnum benchmarkRateType,
+               @ApiParam(value = "基准利率名称", required = false) @RequestParam(value = "benchmarkRateName", required = false) String benchmarkRateName,
+               @ApiParam(value = "页数", required = true) @RequestParam(value = "page", defaultValue = "1") Integer page,
+               @ApiParam(value = "每页纪录数") @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize) {
+
+       '''
     generate_class_path(root_path)
     write_file('test', generate_res(param))
