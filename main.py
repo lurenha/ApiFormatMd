@@ -101,8 +101,9 @@ def dfs_generate_table(name_class, cur_table, content):
                 continue
             cur_table.append(
                 "|%s|%s|-|%s|%s|\n" % (
-                    m.group(3), format_and_todo_type(m.group(2)), ','.join(cur_extend) if cur_extend else '-',
-                    ','.join(cur_about) if cur_about else '-'))
+                    m.group(3), format_and_todo_type(m.group(2)),
+                    ','.join(cur_extend).replace('|', ',') if cur_extend else '-',
+                    ','.join(cur_about).replace('|', ',') if cur_about else '-'))
             cur_about.clear()
             cur_extend.clear()
 
