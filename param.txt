@@ -1,0 +1,7 @@
+
+    @PostMapping(value = "/v1/inquire/credits/{pkCredit}/snapshots/lists")
+    public SearchResult<AgreementPriceSnapshot> inquireCreditSnapshotLists(
+        // -
+        @PathVariable(value = "pkCredit") String pkCredit,
+        // -
+        @RequestBody InquireCreditPriceSnapshotsParam inquireCreditPriceSnapshotsParam)

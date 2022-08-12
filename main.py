@@ -4,9 +4,9 @@ import re
 # 作者
 author = '江火似流萤'
 # 载入外部类目录
-root_path = r"/Users/xxx"
+root_path = r"/Users/jxrt/ccbscf"
 # 生成md文件目录
-write_path = r"/Users/xxx/Desktop"
+write_path = r"/Users/jxrt/Desktop"
 # 预设类型
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
@@ -282,7 +282,6 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
 
 
 if __name__ == '__main__':
-    param = '''
-       '''
+    param = read_content_by_file_path(r"./param.txt")
     generate_class_path(root_path)
-    write_file('test', generate_res(param))
+    write_file('找不到名字了用这个吧', generate_res(param))

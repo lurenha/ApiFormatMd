@@ -1,10 +1,6 @@
 import requests
 import main
 
-param = '''
-'''
-
-
 if __name__ == '__main__':
     headers = {
         'authority': 'source.showdoc.com.cn',
@@ -27,7 +23,7 @@ if __name__ == '__main__':
         'page_id': '9213252099951342',
         'item_id': '2040347871634336',
         'page_title': '测试',
-        'page_content': main.generate_res(param),
+        'page_content': main.generate_res(main.read_content_by_file_path(r"./param.txt")),
         'is_urlencode': '1',
         'cat_id': '',
         'is_notify': '0',
