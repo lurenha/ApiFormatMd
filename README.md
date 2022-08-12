@@ -34,7 +34,106 @@
         return new JsonResult<>();
     }
 ```
-##### InvoiceVO
+##### QuoteStrategyRule(参数)
+```java
+package com.peng.model;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+import java.util.Date;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@TableName("quote_strategy_rule")
+public class QuoteStrategyRule implements Serializable {
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    /**
+     * 所属策略ID
+     */
+    private Long quoteStrategyId;
+
+    /**
+     * 所属渠道ID
+     */
+    private Long resellerChannelId;
+
+    /**
+     * 所属分类 1 生活服务；2 酒店业务；3 飞机票价
+     */
+    private Byte quoteStrategyCategory;
+
+    /**
+     * 引用ID，类型为1是0; 类型为2是大类枚举值； 类型为3是子类枚举值；类型为4商品ID；类型为5是规格ID；类型为6是规格ID
+     */
+    private Byte type;
+
+    /**
+     * 类型为1是【分类名称】; 类型为2是【分类名称>大类名称】；
+     * 类型为3是【分类名称>大类名称>子类名称】；
+     * 类型为4是【分类名称>商品id】；类型为5是【分类名称>商品id>规格id】；
+     * 类型为6是【分类名称>商品id>规格id>开始时间~结束时间】
+     */
+    private String name;
+
+    /**
+     * 引用ID，类型为1是0; 类型为2是大类枚举值； 类型为3是子类枚举值；类型为4商品ID；类型为5是规格ID；类型为6是规格ID
+     */
+    private Long refId;
+
+    /**
+     * 生效时间，类型为6时有值否则为null，格式yyyy-MM-dd HH:mm:ss
+     */
+    private Date startDate;
+
+    /**
+     * 失效时间，类型为6时有值否则为nu，格式yyyy-MM-dd HH:mm:ss
+     */
+    private Date endDate;
+
+    /**
+     * 加价类型 1百分比 2固定金额
+     */
+    private Byte priceType;
+
+    /**
+     * 加价百分比，当加价类型为1时，该字段有值
+     */
+    private Integer rate;
+
+    /**
+     * 加价金额，当加价类型为2时，该字段有值
+     */
+    private Integer amount;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 操作人
+     */
+    private String operator;
+}
+
+```
+##### InvoiceVO(返回主体)
 ```java
 @Data
 public class InvoiceVO extends Invoice {
@@ -80,7 +179,182 @@ public class InvoiceVO extends Invoice {
     }
 }
 ```
-##### Spu
+##### Invoice (InvoiceVO父类)
+```java
+package com.peng.model;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+import java.util.Date;
+
+@JsonInclude(value = JsonInclude.Include.NON_NULL)//为NULL的字段不返回为（JSON）
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@TableName("trade_invoice")
+public class Invoice implements Serializable {
+
+    @TableId(value = "invoice_id", type = IdType.AUTO)
+    private Long invoiceId;
+    /**
+     * 发票抬头类型 1：个人 2：单位
+     */
+    private Byte invoiceTitleType;
+
+    /**
+     * 发票类型 1：国内纸质发票 2：国内电子发票 3:国际电子发票
+     */
+    private Byte invoiceType;
+
+    /**
+     * 个人名称
+     */
+    private String name;
+
+    /**
+     * 单位名称
+     */
+    private String companyName;
+
+    /**
+     * 发票状态 1：处理中 2：已开发票
+     */
+    private Byte status;
+
+    /**
+     * 纳税人识别号
+     */
+    private String taxRegisterNumber;
+
+    /**
+     * 发票编号
+     */
+    private String invoiceCode;
+
+    /**
+     * 发票金额
+     */
+    private Long invoiceAmount;
+
+    /**
+     * 单位注册地址
+     */
+    private String registerAddress;
+
+    /**
+     * 单位注册电话
+     */
+    private String registerPhone;
+
+    /**
+     * 开户银行
+     */
+    private String bankName;
+
+    /**
+     * 银行卡号
+     */
+    private String bankNo;
+
+    /**
+     * 收件人姓名
+     */
+    private String contactName;
+
+    /**
+     * 收件人手机号
+     */
+    private String contactPhone;
+
+    /**
+     * 收件人地址
+     */
+    private String contactAddress;
+
+    /**
+     * 收件人邮箱
+     */
+    private String contactEmail;
+
+    /**
+     * 快递单号
+     */
+    private String expressNo;
+
+    /**
+     * 快递公司
+     */
+    private String expressName;
+
+    /**
+     * 发票电子文件地址
+     */
+    private String fileUrl;
+
+    /**
+     * 发票电子文件地址
+     */
+    private String filePath;
+
+    /**
+     * 实际供应商id
+     */
+    private Integer supplierId;
+
+    /**
+     * ownerId
+     */
+    private Integer ownerId;
+
+    /**
+     * userId
+     */
+    private Integer userId;
+
+    /**
+     * 备注
+     */
+    private String remark;
+
+    /**
+     * 删除标识
+     */
+    private Boolean yn;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 创建人
+     */
+    private String createPin;
+
+    /**
+     * 更新人
+     */
+    private String updatePin;
+
+}
+
+```
+
+##### Spu(InvoiceVO.ExtendSub 依赖)
 ```java
 @Data
 public class Spu implements Serializable {
@@ -140,7 +414,7 @@ public class Spu implements Serializable {
 }
 ```
 
-##### Spu
+##### Key (Spu,Key 依赖)
 ```java
 @Data
 public class Key implements Serializable {
