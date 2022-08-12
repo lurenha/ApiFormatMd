@@ -11,7 +11,7 @@
 - 参数 param.txt (Controller层接口信息 具体参考文件内容)
 
 ## 依赖
-- ptyhon3
+- python3
 
 ## 如何使用
 1. 本地安装python3环境 
