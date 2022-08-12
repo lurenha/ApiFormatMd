@@ -1,9 +1,24 @@
-# ApiFormatMd
-## 配置项
-- 作者 author = '江火似流萤'
-- 载入类根目录 root_path = r"/Users/xxx" (这里指定java项目根目录,程序以此为起点遍历java文件)
-- 生成md文件目录 write_path = r"/Users/xxx/Desktop"
-- 参数写入param.txt 
+# ApiFormatMd 轻量级Java接口文档生成工具
+## 特点
+- 完全基于本地代码执行 Java代码无需引用额外依赖
+- 生成MarkDown格式文档 可使用ShowDoc生成在线文档
+## 配置项 
+### main.py
+- 作者 author = '江火似流萤' (对应Md文档作者信息)
+- 载入类根目录 root_path = r"/Users/xxx" (指定Java项目根目录,程序以此为起点遍历Java文件)
+- 生成md文件目录 write_path = r"/Users/xxx/Desktop" (Md文档写入路径)
+### param.txt 
+- 参数 param.txt (Controller层接口信息 具体参考文件内容)
+
+## 依赖
+- ptyhon3
+
+## 如何使用
+1. 本地安装python3环境 
+2. clone本项目到本地
+3. 修改main.py 'author' 'root_path' 'write_path'配置(首次使用配置)
+4. API信息写入 param.txt 文件
+5. 运行 python3 main.py 终端输出 'success' 则执行成功
 
 ## 例子
 ### java接口
