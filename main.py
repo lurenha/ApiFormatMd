@@ -282,14 +282,10 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
 
 if __name__ == '__main__':
     param = '''
-    @ApiOperation(value = "查询已生效的基准利率")
        @GetMapping(value = "/v1/prices/benchmarks/list")
        public SearchResult<PriceBenchmarkRateVO.PriceBenchmarkRateResponseVO> listPriceBenchmarkRatesByConditions(
-               @ApiIgnore User user,
-               @ApiParam(value = "基准利率类型", required = false) @RequestParam(value = "benchmarkRateType", required = false) BenchmarkRateTypeEnum benchmarkRateType,
-               @ApiParam(value = "基准利率名称", required = false) @RequestParam(value = "benchmarkRateName", required = false) String benchmarkRateName,
-               @ApiParam(value = "页数", required = true) @RequestParam(value = "page", defaultValue = "1") Integer page,
-               @ApiParam(value = "每页纪录数") @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize) {
+                @RequestParam(value = "benchmarkRateType", required = false) BenchmarkRateTypeEnum benchmarkRateType,
+                @RequestParam(value = "benchmarkRateName", required = false) String benchmarkRateName) {
 
        '''
     generate_class_path(root_path)
