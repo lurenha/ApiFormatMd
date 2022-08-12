@@ -10,7 +10,7 @@ write_path = r"/Users/jxrt/Desktop"
 # 预设类型
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
-     'Date', 'long', 'int'])
+     'Date', 'long', 'int', 'void', 'Void'])
 class_todo_set = set()
 class_content_dic = {}
 class_path_dic = {}
@@ -283,11 +283,6 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
 
 if __name__ == '__main__':
     param = '''
-       @GetMapping(value = "/v1/prices/benchmarks/list")
-       public SearchResult<PriceBenchmarkRateVO.PriceBenchmarkRateResponseVO> listPriceBenchmarkRatesByConditions(
-                @RequestParam(value = "benchmarkRateType", required = false) BenchmarkRateTypeEnum benchmarkRateType,
-                @RequestParam(value = "benchmarkRateName", required = false) String benchmarkRateName) {
-
        '''
     generate_class_path(root_path)
     write_file('test', generate_res(param))
