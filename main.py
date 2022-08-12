@@ -4,9 +4,9 @@ import re
 # 作者
 author = '江火似流萤'
 # 载入外部类目录
-root_path = r"D:\ccbscf"
+root_path = r"/Users/jxrt/ccbscf"
 # 生产文件目录
-write_path = r"C:\Users\weipeng\Desktop"
+write_path = r"/Users/jxrt/Desktop"
 # 预设类型
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
@@ -14,6 +14,7 @@ basic_type = set(
 class_todo_set = set()
 class_content_dic = {}
 class_path_dic = {}
+class_parent_dic = {}
 # ------------------------
 template1 = '''<h5 id="{name_class}">{name_class}</h5>\n\n
 |字段|类型|必填|说明|备注|
@@ -82,13 +83,8 @@ def beautify_enum(name_enum, content):
 
 
 def dfs_generate_table(name_class, cur_table, content):
-    parent = re.search(name_class.split('.')[-1]
-                       + '\sextends\s(.*?)\s(\{|implements)', content)
-    if parent:
-        parent = parent.group(1).strip()
-        # 先处理父类
-        if parent not in class_content_dic:
-            return
+    if name_class in class_parent_dic and class_parent_dic[name_class] in class_content_dic:
+        parent = class_parent_dic[name_class]
         dfs_generate_table(parent, cur_table, class_content_dic[parent])
     cur_about = []
     cur_extend = []
@@ -113,23 +109,23 @@ def dfs_generate_table(name_class, cur_table, content):
 
 
 def beautify_class(name_class, content):
-    class_chin = name_class.split('.')
-    if len(class_chin) > 1:
-        beautify_class(class_chin[0], read_content_by_file_path(class_path_dic[class_chin[0]]))
-
-    class_split = content.split(" class")
-    # 内部类 文件遍历时找不到内部类 在此处处理
-    for i in range(2, len(class_split)):
-        y = re.search('(.*?)(extends|implements|\{)', class_split[i])
-        if y:
-            if y.group(1).strip() not in class_content_dic:
-                class_content_dic[y.group(1).strip()] = "pre class" + class_split[i]
-                print("dic add inner class:" + y.group(1).strip())
+    # class_chin = name_class.split('.')
+    # if len(class_chin) > 1:
+    #     beautify_class(class_chin[0], read_content_by_file_path(class_path_dic[class_chin[0]]))
+    #
+    # class_split = content.split(" class")
+    # # 内部类 文件遍历时找不到内部类 在此处处理
+    # for i in range(2, len(class_split)):
+    #     y = re.search('(.*?)(extends|implements|\{)', class_split[i])
+    #     if y:
+    #         if y.group(1).strip() not in class_content_dic:
+    #             class_content_dic[y.group(1).strip()] = "pre class" + class_split[i]
+    #             print("dic add inner class:" + y.group(1).strip())
     # 替换主类
-    class_content_dic[name_class] = class_split[1]
+    # class_content_dic[name_class] = class_split[1]
 
     cur_table = []
-    dfs_generate_table(name_class, cur_table, class_split[1])
+    dfs_generate_table(name_class, cur_table, content)
 
     table = ''
     for t in cur_table:
@@ -191,31 +187,53 @@ def format_and_todo_type(vo_name):
             return '''[{dto}](#{dto})'''.format(dto=vo_name)
 
 
-def add_in_class_content_dic(class_name):
-    if class_name not in class_content_dic:
-        class_name_list = class_name.split('.')
+def find_right_end_idx(text, begin_idx):
+    stack = []
+    if text[begin_idx] == '{':
+        stack.append(begin_idx)
 
-        if class_name_list[-1] in class_content_dic:  # 尾在 头一定在
-            class_content_dic[class_name] = class_content_dic[class_name_list[-1]]
-            return
-        else:  # 尾不在 头一定不在
-            if class_name_list[0] in class_path_dic:
-                com_content = read_content_by_file_path(class_path_dic[class_name_list[0]])
-                #切割
+    for i in range(begin_idx + 1, len(text)):
+        if text[i] == '{':
+            stack.append(i)
+        elif text[i] == '}':
+            if text[stack[-1]] == '{':
+                stack.pop()
+                if not stack:
+                    return i
+            else:
+                stack.append(i)
 
-                if [class_name_list[0] in class_content_dic:
-                    pass  # 尾不在 头在 不存在该情况
-                else:
 
-                    tem = read_content_by_file_path(class_path_dic[class_name_list[0]])
-                # 内部类处理
-                for cur in sp[1:]:
-                    tem = 'pre ' + tem[re.search('class.*?' + cur + '.*{', tem).start():]
-                class_content_dic[i] = tem
-                class_content_dic[sp[-1]] = tem
-                print("generate class:" + i)
-                if len(sp) > 1:
-                    print("generate class:" + sp[-1])
+def dfs_load_class_by_content(source):
+    all_content_list = re.findall('class\s.*?{', source)
+    for cur_content in all_content_list:
+        cur_class_name = re.search('class\s([a-zA-Z<>,]+)\s?(implements|extends|\{)', cur_content).group(1)
+        begin = source.find(cur_content) + len(cur_content) - 1
+        end = find_right_end_idx(source, begin)
+        cur_source = source[begin + 1:end]
+        f = re.search('class\s.*?{', cur_source)
+        if f:
+            # 剔除内部类
+            cur_source = cur_source[:cur_source.find(f.group())]
+        # 处理当前类和内部类
+        class_content_dic[cur_class_name] = cur_source
+        p = re.search('\sextends\s(.*?)\s(\{|implements)', cur_content)
+        if p:
+            parent = p.group(1)
+            if parent not in class_content_dic:
+                if parent in class_path_dic:
+                    dfs_load_class_by_content(read_content_by_file_path(class_path_dic[parent]))
+                    class_parent_dic[cur_class_name] = parent
+
+
+def load_class_by_name(class_name):
+    if "Enum" in class_name and class_name in class_path_dic and class_name not in class_content_dic:
+        class_content_dic[class_name] = read_content_by_file_path(class_path_dic[class_name])
+    else:
+        sp = class_name.split('.')
+        if sp[-1] not in class_content_dic:
+            if sp[0] in class_path_dic:
+                dfs_load_class_by_content(read_content_by_file_path(class_path_dic[sp[0]]))
 
 
 def generate_other():
@@ -225,12 +243,11 @@ def generate_other():
         redo_type_slave = class_todo_set.copy()
         class_todo_set.clear()
         for i in redo_type_slave - over_type:
-            add_in_class_content_dic(i)
+            load_class_by_name(i)
             if "Enum" in i:
                 res += generate_enum(i)
             else:
                 res += generate_class(i)
-            print("----------------------------")
         over_type = over_type | redo_type_slave
     return res
 
@@ -273,11 +290,22 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
     # 填充到模板
     res = template_txt.format(name=author, describe=describe, url=url, method=method, request=request,
                               response=response, other=other)
+    print('success')
     return res
 
 
 if __name__ == '__main__':
     param = '''
+        /**
+     * 填充文案信息
+     * @param projectManagerExcelDataBOList
+     * @return
+     */
+    @RequestMapping(value = "/v1/teams/generateExcelMsg", method = RequestMethod.POST)
+    public List<ProjectManagerExcelDataBO> generateExcelMsg(@RequestBody List<ProjectManagerExcelDataBO> projectManagerExcelDataBOList) {
+        return tCrTeamCcbscfChangeService.generateExcelMsg(projectManagerExcelDataBOList);
+    }
+
 '''
     generate_class_path(root_path)
-    write_file('随便起个名', generate_res(param))
+    write_file('test', generate_res(param))

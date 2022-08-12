@@ -177,7 +177,7 @@ def find_right_end_idx(text, begin_idx):
 class_content_dic = {}
 
 
-def dfs_load_class_by_name(class_name, source):
+def dfs_load_class_by_name(source):
     all_content_list = re.findall('class\s.*?{', source)
     for cur_content in all_content_list:
         cur_class_name = re.search('class\s([a-zA-Z<>,]+)\s?(implements|extends|\{)', cur_content).group(1)
