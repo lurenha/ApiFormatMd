@@ -22,9 +22,9 @@ template1 = '''<h5 id="{name_class}">{name_class}</h5>\n\n
 # ------------------------
 template2 = '''<h5 id="{name_enum}">{name_enum}</h5>\n
 ```java
-  \n
 {table}
-```\n'''
+```
+'''
 # ------------------------
 template_txt = '''
 ## 接口说明
@@ -78,8 +78,7 @@ def read_content_by_file_path(file_path):
 
 
 def beautify_enum(name_enum, content):
-    m = content.split('enum ' + name_enum)[1]
-    return template2.format(name_enum=name_enum, table='enum ' + name_enum + m[:m.index(';') + 1])
+    return template2.format(name_enum=name_enum, table=re.search('enum\s' + name_enum + '.*?;', content, re.S).group())
 
 
 def dfs_generate_table(name_class, cur_table, content):
@@ -296,16 +295,8 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
 
 if __name__ == '__main__':
     param = '''
-        /**
-     * 填充文案信息
-     * @param projectManagerExcelDataBOList
-     * @return
-     */
-    @RequestMapping(value = "/v1/teams/generateExcelMsg", method = RequestMethod.POST)
-    public List<ProjectManagerExcelDataBO> generateExcelMsg(@RequestBody List<ProjectManagerExcelDataBO> projectManagerExcelDataBOList) {
-        return tCrTeamCcbscfChangeService.generateExcelMsg(projectManagerExcelDataBOList);
-    }
-
-'''
+    @RequestMapping(value = "/v1/corp/real-name/auth/find", method = RequestMethod.GET)
+    public BizCorpRealNameAuthResponseVO findCorpRealName(@RequestParam(value = "fkRnProgress") String fkRnProgress) {
+    '''
     generate_class_path(root_path)
     write_file('test', generate_res(param))
