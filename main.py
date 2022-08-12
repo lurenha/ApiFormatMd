@@ -108,21 +108,6 @@ def dfs_generate_table(name_class, cur_table, content):
 
 
 def beautify_class(name_class, content):
-    # class_chin = name_class.split('.')
-    # if len(class_chin) > 1:
-    #     beautify_class(class_chin[0], read_content_by_file_path(class_path_dic[class_chin[0]]))
-    #
-    # class_split = content.split(" class")
-    # # 内部类 文件遍历时找不到内部类 在此处处理
-    # for i in range(2, len(class_split)):
-    #     y = re.search('(.*?)(extends|implements|\{)', class_split[i])
-    #     if y:
-    #         if y.group(1).strip() not in class_content_dic:
-    #             class_content_dic[y.group(1).strip()] = "pre class" + class_split[i]
-    #             print("dic add inner class:" + y.group(1).strip())
-    # 替换主类
-    # class_content_dic[name_class] = class_split[1]
-
     cur_table = []
     dfs_generate_table(name_class, cur_table, content)
 
