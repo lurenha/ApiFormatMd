@@ -1,2 +1,7 @@
-@PostMapping("/createInvoice")
-    public JsonResult createInvoice(@RequestBody InvoiceCreateParam invoiceCreateParam) {
+    @RequestMapping(value = "/v1/test/{userId}", method = RequestMethod.POST)
+    public JsonResult<InvoiceVO> test(
+            @PathVariable(value = "userId") int userId,
+            @RequestParam(value = "roleCode", required = true) String roleCode,
+            @RequestBody QuoteStrategyRule quoteStrategyRule) {
+        return new JsonResult<>();
+    }

@@ -4,13 +4,14 @@ import re
 # 作者
 author = '江火似流萤'
 # 载入外部类目录
-root_path = r"/Users/jxrt/ccbscf"
+root_path = r"/Users/jxrt/javaProject/spring-boot-demo"
 # 生成md文件目录
 write_path = r"/Users/jxrt/Desktop"
 # 预设类型
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
-     'Date', 'long', 'int', 'void', 'Void'])
+     'Date', 'long', 'int', 'void', 'Void', 'byte', 'Byte', 'short', 'Short', 'float', 'Float', 'double', 'Double',
+     'Character', 'char'])
 class_todo_set = set()
 class_content_dic = {}
 class_path_dic = {}
@@ -91,10 +92,13 @@ def dfs_generate_table(name_class, cur_table, content):
         about = re.search('(//|\*).*', line)
         extend = re.search('ApiModelProperty.*?"(.*?)"', line)
         if about:
-            cur_about.append(about.group().replace('*', '').replace('/', ''))
+            about = about.group().replace('*', '').replace('/', '')
+            if len(about) > 1:
+                cur_about.append(about)
         if extend:
-            cur_extend.append(extend.group(1))
-
+            extend = extend.group(1)
+            if len(extend) > 1:
+                cur_extend.append(extend)
         m = re.search('(private|protected)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[=;]', line)
         if m:
             if 'static' in m.group(2):
