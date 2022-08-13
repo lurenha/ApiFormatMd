@@ -1,7 +1,12 @@
 import requests
 import main
 
+cat_name = '测试专用'
+page_title = '随便起个名字'
+
 if __name__ == '__main__':
+    main.generate_class_path()
+
     headers = {
         'authority': 'source.showdoc.com.cn',
         'accept': 'application/json, text/plain, */*',
@@ -17,20 +22,14 @@ if __name__ == '__main__':
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
     }
 
-    main.generate_class_path()
-
     data = {
-        'page_id': '9213252099951342',
-        'item_id': '2040347871634336',
-        'page_title': '测试',
+        'api_key': 'e72099f43984c985ab03f82c48dd71cf1291974737',
+        'api_token': '5cb48df923ae7703c12ca2e9ebb57e122087123806',
+        'cat_name': cat_name,
+        'page_title': page_title,
         'page_content': main.generate_res(main.read_content_by_file_path(r"./param.txt")),
-        'is_urlencode': '1',
-        'cat_id': '',
-        'is_notify': '0',
-        'notify_content': '',
-        'user_token': '1ae97c56c1bfc129fb04f2a42ec4d47fd408f04d46264e463048770060bfe936',
-        '_item_pwd': 'null',
     }
-    response = requests.post('https://source.showdoc.com.cn/server/index.php?s=/api/page/save', headers=headers,
+    response = requests.post('https://www.showdoc.cc/server/api/item/updateByApi', headers=headers,
                              data=data)
-    print(response.content)
+    print(response)
+    # see: https://www.showdoc.com.cn/2040347871634336/

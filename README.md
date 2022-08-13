@@ -14,12 +14,18 @@
 - python3
 
 ## 如何使用
+### 方式一生成文件到本地
 1. 本地安装python3环境 
 2. clone本项目到本地
 3. 修改main.py 'author' 'root_path' 'write_path'配置(首次使用配置)
 4. API信息写入 param.txt 文件
-5. 运行 python3 main.py 终端输出 'success' 则执行成功
-
+5. 执行 ```python3 main.py``` 终端输出 'success' 则执行成功
+---
+### 方式二生成文档到showDoc
+1. 基于方式一的配置 执行 ```python3 request_show_doc.py```
+2. 打开 https://www.showdoc.com.cn/2040347871634336/ 查看文档
+3. 如果报错```ModuleNotFoundError: No module named 'requests'``` 需要导入request包执行 ```pip3 install requests```
+---
 ## 例子
 ### java接口
 <details>

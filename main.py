@@ -4,9 +4,9 @@ import re
 # 作者
 author = '江火似流萤'
 # 载入外部类目录
-root_path = r"/Users/jxrt/javaProject/spring-boot-demo"
+root_path = r"/Users/apple/java-project/spring-boot-demo"
 # 生成md文件目录
-write_path = r"/Users/jxrt/Desktop"
+write_path = r"/Users/apple/Desktop"
 # 预设类型
 basic_type = set(
     ['BigDecimal', 'String', 'Timestamp', 'Long', 'Integer', 'Boolean', 'boolean', 'Map', 'List', 'BigInteger', 'T',
