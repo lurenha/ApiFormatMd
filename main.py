@@ -251,18 +251,34 @@ def write_file(name, text):
         f.write(text)
 
 
-def generate_res(source_txt, des='找不到名字了用这个吧'):
+def split_param_txt(param_txt):
+    split = re.split(r'(@.*?Mapping)', param_txt)
+    f = 0
+    res = []
+    for i in split:
+        j = i.strip()
+        if not j:
+            continue
+        if f % 2 == 0:
+            res.append(j)
+        else:
+            res[-1] += j
+        f += 1
+    return res
+
+
+def generate_res(source_txt):
     # method
     r1 = re.search('@RequestMapping.*?RequestMethod\.(.*?)[,\s\)]', source_txt)
     method = r1.group(1) if r1 else re.search('@(.*)?Mapping', source_txt).group(1)
-
+    method = method.upper()
     # url
     r2 = re.search('@RequestMapping.*?value.*?"(.*?)"', source_txt)
-    url = r2.group(1) if r2 else re.search('Mapping.*?value.*?"(.*?)"', source_txt).group(1)
+    url = r2.group(1) if r2 else re.search('Mapping.*?(value)?.*?"(.*?)"', source_txt).group(2)
 
     # describe
     r3 = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
-    describe = r3.group(1) if r3 else des
+    describe = r3.group(1) if r3 else url
 
     # 请求参数说明
     param_list = []
@@ -285,10 +301,11 @@ def generate_res(source_txt, des='找不到名字了用这个吧'):
     res = template_txt.format(name=author, describe=describe, url=url, method=method, request=request,
                               response=response, other=other)
     print('success')
-    return res
+    return describe, res
 
 
 if __name__ == '__main__':
-    param = read_content_by_file_path(r"./param.txt")
+    param_list = split_param_txt(read_content_by_file_path(r"./param.txt"))
     generate_class_path(root_path)
-    write_file('找不到名字了用这个吧', generate_res(param))
+    describe, content = generate_res(param_list[0])
+    write_file(describe, content)

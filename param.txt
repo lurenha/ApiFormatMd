@@ -5,3 +5,14 @@
             @RequestBody QuoteStrategyRule quoteStrategyRule) {
         return new JsonResult<>();
     }
+
+        @PostMapping("/createInvoice")
+    public JsonResult createInvoice(@RequestBody InvoiceCreateParam invoiceCreateParam) {
+        return null;
+    }
+
+        @PostMapping("/openInvoice")
+    public JsonResult openInvoice(@RequestBody InvoiceOpenParam invoiceOpenParam) {
+        return null;
+
+    }
