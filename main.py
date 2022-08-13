@@ -253,17 +253,14 @@ def write_file(name, text):
 
 def split_param_txt(param_txt):
     split = re.split(r'(@.*?Mapping)', param_txt)
-    f = 0
     res = []
-    for i in split:
-        j = i.strip()
-        if not j:
+    for i, j in enumerate(split):
+        if i == 0:
             continue
-        if f % 2 == 0:
+        if i % 2 == 1:
             res.append(j)
         else:
             res[-1] += j
-        f += 1
     return res
 
 
@@ -305,7 +302,8 @@ def generate_res(source_txt):
 
 
 if __name__ == '__main__':
-    param_list = split_param_txt(read_content_by_file_path(r"./param.txt"))
     generate_class_path(root_path)
-    describe, content = generate_res(param_list[0])
-    write_file(describe, content)
+    param_list = split_param_txt(read_content_by_file_path(r"./param.txt"))
+    for i in param_list:
+        describe, content = generate_res(i)
+        write_file(describe.replace('/', '-'), content)
