@@ -167,7 +167,10 @@ def format_and_todo_type(vo_name):
         pre = vo_name[:s].strip()
         inter = r.group(1)
         r = format_and_todo_type(pre)
-        r += '<' + ','.join([format_and_todo_type(i) for i in inter.split(',')]) + '>'
+        if '<' not in inter:
+            r += '<' + ','.join([format_and_todo_type(i) for i in inter.split(',')]) + '>'
+        else:
+            r += '<' + format_and_todo_type(inter) + '>'
         return r
     else:
         if vo_name in basic_type:

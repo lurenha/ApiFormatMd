@@ -33,7 +33,7 @@
 
 ```java
     @RequestMapping(value = "/v1/test/{userId}", method = RequestMethod.POST)
-    public JsonResult<InvoiceVO> test(
+    public JsonResult<List<Map<InvoiceVO.Extend, InvoiceVO>>> test(
             @PathVariable(value = "userId") int userId,
             @RequestParam(value = "roleCode", required = true) String roleCode,
             @RequestBody QuoteStrategyRule quoteStrategyRule) {
@@ -484,7 +484,7 @@ public class Key implements Serializable {
 | :----: | :----: | :----: | :----: |
 |code|String|"0"|状态码(非0为异常情况)|
 |message |String|请求成功|信息描述|
-|data|[JsonResult](#JsonResult)<[InvoiceVO](#InvoiceVO)>|-|- |
+|data|[JsonResult](#JsonResult)<List<Map<[InvoiceVO.Extend](#Extend),[InvoiceVO](#InvoiceVO)>>>|-|- |
 
 
 
@@ -509,16 +509,6 @@ public class Key implements Serializable {
 |createTime|Date|-|-| 创建时间|
 |updateTime|Date|-|-| 更新时间|
 |operator|String|-|-| 操作人|
----
-
-<h5 id="JsonResult">JsonResult</h5>
-
-
-|字段|类型|必填|说明|备注|
-| :----: | :----: | :----: | :----: | :----: |
-|code|Integer|-|-| code 为"0"则无异常|
-|msg|String|-|-| msg|
-|data|T|-|-| data 返回体对象|
 ---
 
 <h5 id="InvoiceVO">InvoiceVO</h5>
@@ -562,17 +552,23 @@ public class Key implements Serializable {
 |extendSub|[ExtendSub](#ExtendSub)|-|-|扩展信息|
 ---
 
-<h5 id="ExtendSub">ExtendSub</h5>
+<h5 id="JsonResult">JsonResult</h5>
+
+
+|字段|类型|必填|说明|备注|
+| :----: | :----: | :----: | :----: | :----: |
+|code|Integer|-|-| code 为"0"则无异常|
+|msg|String|-|-| msg|
+|data|T|-|-| data 返回体对象|
+---
+
+<h5 id="Extend">Extend</h5>
 
 
 |字段|类型|必填|说明|备注|
 | :----: | :----: | :----: | :----: | :----: |
 |title|String|-|-|标题-父|
 |content|String|-|-|内容-父|
-|spuList|List<[Spu](#Spu)>|-|-|spu集合-子|
-|spu|[Spu](#Spu)|-|-|spu信息-子|
-|spuMap|Map<String,[Spu](#Spu)>|-|-|  spu Map-子|
-|specialChannelEnum|[SpecialChannelEnum](#SpecialChannelEnum)|-|-|渠道枚举|
 ---
 
 <h5 id="InvoiceEnum">InvoiceEnum</h5>
@@ -588,15 +584,19 @@ enum InvoiceEnum {
     PAPER(1, "纸质发票"),
     ELECTRONIC(2, "电子发票");
 ```
-<h5 id="SpecialChannelEnum">SpecialChannelEnum</h5>
+<h5 id="ExtendSub">ExtendSub</h5>
 
-```java
-enum SpecialChannelEnum implements CommonEnum{
-    DEFAULT("DEFAULT", "默认渠道"),
-    SASS("SASS", "SASS平台"),
-    UNKNOWN("UNKNOWN", "UNKNOWN"),
-    ;
-```
+
+|字段|类型|必填|说明|备注|
+| :----: | :----: | :----: | :----: | :----: |
+|title|String|-|-|标题-父|
+|content|String|-|-|内容-父|
+|spuList|List<[Spu](#Spu)>|-|-|spu集合-子|
+|spu|[Spu](#Spu)|-|-|spu信息-子|
+|spuMap|Map<String,[Spu](#Spu)>|-|-|  spu Map-子|
+|specialChannelEnum|[SpecialChannelEnum](#SpecialChannelEnum)|-|-|渠道枚举|
+---
+
 <h5 id="Spu">Spu</h5>
 
 
@@ -614,6 +614,15 @@ enum SpecialChannelEnum implements CommonEnum{
 |keyList|List<[Key](#Key)>|-|-|key集合|
 ---
 
+<h5 id="SpecialChannelEnum">SpecialChannelEnum</h5>
+
+```java
+enum SpecialChannelEnum implements CommonEnum{
+    DEFAULT("DEFAULT", "默认渠道"),
+    SASS("SASS", "SASS平台"),
+    UNKNOWN("UNKNOWN", "UNKNOWN"),
+    ;
+```
 <h5 id="Key">Key</h5>
 
 
@@ -625,9 +634,5 @@ enum SpecialChannelEnum implements CommonEnum{
 |names|Map<String,String>|-|-| 业务字段 , 要素名称多语言map, Map<languageCode, value>|
 |keyList|List<[Key](#Key)>|-|-|-|
 ---
-
-
-
-
 
 </details>
