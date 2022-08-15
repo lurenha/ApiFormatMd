@@ -296,8 +296,8 @@ def generate_res(source_txt):
     url = r2.group(1) if r2 else re.search('Mapping.*?(value)?.*?"(.*?)"', source_txt).group(2)
 
     # describe
-    r3 = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
-    describe = r3.group(1) if r3 else url
+    # r3 = re.search('@ApiOperation.*?value.*?"(.*?)"', source_txt)
+    # describe = r3.group(1) if r3 else url
 
     # 请求参数说明
     controller_param_list = []
@@ -312,8 +312,10 @@ def generate_res(source_txt):
     # 返回参数说明
     res_dto = re.search('public\s([a-zA-Z<>,\.\s]+)\s([_a-zA-Z0-9]+)\s?\(', source_txt)
     if res_dto:
+        describe = res_dto.group(2).strip()
         res_dto = res_dto.group(1).strip()
     else:
+        describe = ''
         res_dto = ''
     response = generate_response(res_dto)
 
