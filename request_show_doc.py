@@ -19,10 +19,9 @@ if __name__ == '__main__':
         describe, content = main.generate_res(i)
         data['page_title'] = describe
         data['page_content'] = content
-
         response = requests.post('https://www.showdoc.cc/server/api/item/updateByApi', data=data)
-        print(response)
+        print('https://www.showdoc.com.cn/' + response.json()['data']['item_id'] + '/' + response.json()['data'][
+            'page_id'])
     print('succeed')
-    print('https://www.showdoc.com.cn/2040347871634336/')
-    # 生成文档地址: https://www.showdoc.com.cn/2040347871634336/
+    # 生成文档地址: https://www.showdoc.com.cn/
     # showDoc 开放API: https://www.showdoc.com.cn/page/102098
