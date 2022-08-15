@@ -297,13 +297,14 @@ def generate_res(source_txt):
     # 填充到模板
     res = template_txt.format(name=author, describe=describe, url=url, method=method, request=request,
                               response=response, other=other)
-    print('success')
     return describe, res
 
 
 if __name__ == '__main__':
+    print('begin...')
     generate_class_path(root_path)
     param_list = split_param_txt(read_content_by_file_path(r"./param.txt"))
     for i in param_list:
         describe, content = generate_res(i)
         write_file(describe.replace('/', '-'), content)
+    print('succeed')
