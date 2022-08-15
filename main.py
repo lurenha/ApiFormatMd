@@ -159,6 +159,19 @@ def generate_class(name_class):
         return 'None\n---\n\n'
 
 
+def is_valid(sp_dto):
+    res = []
+    for i in sp_dto:
+        if i == '<':
+            res.append(i)
+        elif i == '>':
+            if len(res) == 0:
+                return False
+            if res[-1] == '<':
+                res.pop()
+    return len(res) == 0
+
+
 def format_and_todo_type(vo_name):
     vo_name = vo_name.strip()
     r = re.search('<(.+)>', vo_name)
@@ -167,17 +180,26 @@ def format_and_todo_type(vo_name):
         pre = vo_name[:s].strip()
         inter = r.group(1)
         r = format_and_todo_type(pre)
-        if '<' not in inter:
+
+        flag = True
+        for sp_dto in inter.split(','):
+            if not is_valid(sp_dto):
+                flag = False
+                break
+
+        if flag:
             r += '<' + ','.join([format_and_todo_type(i) for i in inter.split(',')]) + '>'
         else:
             r += '<' + format_and_todo_type(inter) + '>'
         return r
     else:
-        if vo_name in basic_type:
+        # 兼容数组 Invoice[] invoice
+        vo_name_rp = vo_name.replace('[', '').replace(']', '')
+        if vo_name_rp in basic_type:
             return vo_name
         else:
-            class_todo_set.add(vo_name)
-            return '''[{dto}](#{dto_url})'''.format(dto=vo_name, dto_url=vo_name.split('.')[-1])
+            class_todo_set.add(vo_name_rp)
+            return '''[{dto}](#{dto_url})'''.format(dto=vo_name, dto_url=vo_name_rp.split('.')[-1])  # 兼容内部类
 
 
 def find_right_end_idx(text, begin_idx):
@@ -278,18 +300,21 @@ def generate_res(source_txt):
     describe = r3.group(1) if r3 else url
 
     # 请求参数说明
-    param_list = []
-    request_body = re.search('@RequestBody.*?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
-    path_variable = re.search('@PathVariable(.*?)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
-    param_list.extend(re.findall('@RequestParam.*?\s?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
-    if request_body:
-        param_list.append((request_body.group(1), request_body.group(2)))
-    if path_variable:
-        param_list.append((path_variable.group(2), path_variable.group(3)))
-    request = generate_request(param_list)
+    controller_param_list = []
+    controller_param_list.extend(
+        re.findall('@RequestBody.*?\s?([\[\]a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
+    controller_param_list.extend(
+        re.findall('@PathVariable.*?\s?([\[\]a-zA-Z<>,]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
+    controller_param_list.extend(
+        re.findall('@RequestParam.*?\s?([\[\]a-zA-Z<>,]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
+    request = generate_request(controller_param_list)
 
     # 返回参数说明
-    res_dto = re.search('public\s([a-zA-Z<>,\.\s]+)\s([_a-zA-Z0-9]+)\s?\(', source_txt).group(1).strip()
+    res_dto = re.search('public\s([a-zA-Z<>,\.\s]+)\s([_a-zA-Z0-9]+)\s?\(', source_txt)
+    if res_dto:
+        res_dto = res_dto.group(1).strip()
+    else:
+        res_dto = ''
     response = generate_response(res_dto)
 
     # 补充实体说明
