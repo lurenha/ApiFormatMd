@@ -279,7 +279,7 @@ def generate_res(source_txt):
 
     # 请求参数说明
     param_list = []
-    request_body = re.search('@RequestBody\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
+    request_body = re.search('@RequestBody.*?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
     path_variable = re.search('@PathVariable(.*?)\s([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt)
     param_list.extend(re.findall('@RequestParam.*?\s?([a-zA-Z<>,\s]+)\s([_a-zA-Z0-9]+)\s?[,\)]', source_txt))
     if request_body:
